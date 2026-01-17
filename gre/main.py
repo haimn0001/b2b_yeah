@@ -1,215 +1,253 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-import os
-from datetime import datetime
+import numpy as np
+from datetime import datetime, timedelta
+import time
 
-# --- 1. CONFIGURATION & HIGH-TECH THEME ---
+# --- 1. PAGE CONFIGURATION & "GAND FAD" THEME ---
 st.set_page_config(
-    page_title="NEXUS GLOBAL | Industrial Trade",
-    page_icon="💎",
+    page_title="NEXUS PRIME | Institutional Trading",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for "Billion Dollar" Aesthetics (Dark Mode, Glassmorphism, Neon Accents)
+# --- 2. ADVANCED CSS (ANIMATIONS, GLOWS, TRANSITIONS) ---
 st.markdown("""
     <style>
-    /* GLOBAL DARK THEME & FONTS */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-    
+    /* IMPORT FUTURISTIC FONTS */
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+    /* CORE THEME */
     .stApp {
-        background-color: #050510;
-        background-image: radial-gradient(circle at 50% 50%, #1a1a40 0%, #050510 100%);
-        font-family: 'Inter', sans-serif;
+        background-color: #000000;
+        background-image: 
+            linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 30px 30px;
+        color: #e0e0e0;
+        font-family: 'Rajdhani', sans-serif;
     }
-    
-    /* HEADINGS - CYBERPUNK/HIGH-TECH STYLE */
-    h1, h2, h3 {
-        font-family: 'Orbitron', sans-serif;
-        color: #FFFFFF;
+
+    /* ANIMATED TICKER TAPE */
+    .ticker-wrap {
+        width: 100%;
+        overflow: hidden;
+        background-color: #0a0a0a;
+        border-bottom: 1px solid #333;
+        white-space: nowrap;
+        padding: 5px 0;
+    }
+    .ticker {
+        display: inline-block;
+        animation: marquee 20s linear infinite;
+    }
+    @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
+    .ticker-item {
+        display: inline-block;
+        padding: 0 2rem;
+        font-family: 'Roboto Mono', monospace;
+        font-weight: bold;
+    }
+    .up { color: #00ff00; }
+    .down { color: #ff0044; }
+
+    /* DYNAMIC TEXT ANIMATION (The "Pop Up" Headline) */
+    .dynamic-text:before {
+        content: 'Reliable Supply';
+        animation: animate infinite 9s;
+        color: #00d4ff;
+        font-weight: 800;
+    }
+    @keyframes animate {
+        0% { content: 'Reliable Supply'; opacity: 0; }
+        10% { opacity: 1; }
+        30% { opacity: 1; }
+        40% { opacity: 0; }
+        
+        41% { content: 'Best Market Rates'; opacity: 0; }
+        50% { opacity: 1; }
+        70% { opacity: 1; }
+        80% { opacity: 0; }
+
+        81% { content: 'Trusted Global Trade'; opacity: 0; }
+        90% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+
+    /* GLASSMORPHISM CARDS */
+    .glass-panel {
+        background: rgba(20, 20, 30, 0.7);
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* NEON BUTTONS */
+    .stButton>button {
+        background: linear-gradient(90deg, #00d4ff, #005bea);
+        color: black;
+        font-weight: bold;
+        border: none;
+        border-radius: 4px;
         text-transform: uppercase;
         letter-spacing: 2px;
-    }
-    
-    h1 {
-        text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-    }
-    
-    /* GLASSMORPHISM CARDS */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        padding: 20px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-        transition: transform 0.3s ease;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        border-color: #00d4ff;
-    }
-    
-    /* BUTTONS - NEON GLOW */
-    .stButton>button {
-        background: linear-gradient(45deg, #00d4ff, #005bea);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 1px;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         width: 100%;
     }
     .stButton>button:hover {
-        box-shadow: 0 0 15px #00d4ff;
-    }
-    
-    /* INPUT FIELDS - MINIMALIST */
-    .stTextInput>div>div>input, .stSelectbox>div>div>div {
-        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 20px #00d4ff;
+        transform: scale(1.02);
         color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 5px;
     }
     
-    /* SIDEBAR */
-    section[data-testid="stSidebar"] {
-        background-color: #02020a;
-        border-right: 1px solid #1f1f3a;
+    /* INPUT STYLING */
+    input, select {
+        background-color: #0a0a0a !important;
+        color: #00d4ff !important;
+        border: 1px solid #333 !important;
+    }
+    
+    h1, h2, h3 {
+        text-transform: uppercase;
+        letter-spacing: 3px;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- 2. DATA ENGINE ---
-DATA_FILE = 'b2b_leads.csv'
-ADMIN_PASSWORD = 'admin'
-
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        return pd.DataFrame(columns=['Date', 'Company', 'Industry', 'Region', 'Material', 'Volume_MT', 'Status'])
-    return pd.read_csv(DATA_FILE)
-
-def save_lead(company, industry, region, material, volume):
-    df = load_data()
-    new_data = pd.DataFrame({
-        'Date': [datetime.now().strftime("%Y-%m-%d %H:%M")],
-        'Company': [company],
-        'Industry': [industry],
-        'Region': [region],
-        'Material': [material],
-        'Volume_MT': [volume],
-        'Status': ['Pending Analysis']
+# --- 3. HELPER FUNCTIONS ---
+def generate_live_data():
+    # Simulate live candlestick data
+    dates = pd.date_range(end=datetime.now(), periods=60, freq='1min')
+    base_price = 15000 + np.cumsum(np.random.randn(60) * 50)
+    
+    df = pd.DataFrame({
+        'Date': dates,
+        'Open': base_price,
+        'High': base_price + np.random.rand(60) * 50,
+        'Low': base_price - np.random.rand(60) * 50,
+        'Close': base_price + np.random.randn(60) * 20
     })
-    df = pd.concat([df, new_data], ignore_index=True)
-    df.to_csv(DATA_FILE, index=False)
+    return df
 
-# --- 3. NAVIGATION ---
-st.sidebar.title("🔐 ACCESS")
-mode = st.sidebar.radio("", ["Global Trading Portal", "Command Center (Admin)"])
+# --- 4. TOP TICKER (MARQUEE) ---
+st.markdown("""
+<div class="ticker-wrap">
+    <div class="ticker">
+        <span class="ticker-item">LITHIUM: $15,240 <span class="up">▲ 1.2%</span></span>
+        <span class="ticker-item">COBALT: $32,100 <span class="down">▼ 0.5%</span></span>
+        <span class="ticker-item">STEEL: $580 <span class="up">▲ 0.8%</span></span>
+        <span class="ticker-item">COPPER: $8,400 <span class="up">▲ 2.1%</span></span>
+        <span class="ticker-item">ALUMINUM: $2,250 <span class="down">▼ 0.1%</span></span>
+        <span class="ticker-item">NICKEL: $19,800 <span class="up">▲ 1.5%</span></span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# --- 4. THE LANDING PAGE (CLIENT VIEW) ---
-if mode == "Global Trading Portal":
-    # HERO SECTION
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.title("NEXUS GLOBAL")
-        st.subheader("Next-Gen Industrial Procurement & Supply Chain Architecture.")
-        st.markdown("**Mobilizing Critical Raw Materials for the Future Economy.**")
+# --- 5. MAIN HEADER WITH MOVING TEXT ---
+col1, col2 = st.columns([2, 1])
+with col1:
+    st.markdown("<h1>NEXUS <span style='color:#00d4ff'>PRIME</span></h1>", unsafe_allow_html=True)
+    # This is the "Pop Up" Changing Heading
+    st.markdown("### The Most <span class='dynamic-text'></span> Platform", unsafe_allow_html=True)
+
+with col2:
+    st.metric(label="LIVE SERVER STATUS", value="ONLINE 🟢", delta="LATENCY: 12ms")
+
+st.markdown("---")
+
+# --- 6. LIVE MARKET DASHBOARD ---
+# Layout: Chart on Left (2/3), Order Panel on Right (1/3)
+c1, c2 = st.columns([3, 1])
+
+with c1:
+    st.markdown("### 📈 LIVE MARKET FEED: LITHIUM CARBONATE (Li2CO3)")
+    
+    # Generate Fake Live Chart
+    chart_data = generate_live_data()
+    
+    fig = go.Figure(data=[go.Candlestick(
+        x=chart_data['Date'],
+        open=chart_data['Open'],
+        high=chart_data['High'],
+        low=chart_data['Low'],
+        close=chart_data['Close'],
+        increasing_line_color='#00ff00', 
+        decreasing_line_color='#ff0044'
+    )])
+    
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="white"),
+        height=500,
+        margin=dict(l=0, r=0, t=20, b=0),
+        xaxis_rangeslider_visible=False
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+with c2:
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+    st.markdown("### ⚡ QUICK TRADE")
+    
+    tab1, tab2 = st.tabs(["BUY", "SELL"])
+    
+    with tab1:
+        st.markdown("**Order Type:**")
+        order_type = st.selectbox("Type", ["Market Order", "Limit Order", "Stop Loss"], key="buy_type")
         
-    with col2:
-        # FAKE LIVE TICKER
-        st.markdown("""
-        <div style="background: rgba(0,255,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #00ff00;">
-            <span style="color: #00ff00; font-family: 'Orbitron';">● LIVE MARKET</span><br>
-            LITHIUM: $13,450 (+1.2%)<br>
-            COBALT: $32,100 (-0.4%)<br>
-            SCRAP STEEL: $380 (+0.8%)
+        st.markdown("**Commodity:**")
+        asset = st.selectbox("Asset", ["Lithium", "Steel Scrap", "Cobalt", "Nickel"], key="buy_asset")
+        
+        qty = st.number_input("Quantity (MT)", min_value=1, value=10)
+        
+        # Live Price Calculation Simulation
+        price = 15240
+        total = qty * price
+        
+        st.markdown(f"""
+        <div style='background:#111; padding:10px; border-radius:5px; margin: 10px 0;'>
+            <small>Est. Price / MT</small><br>
+            <strong style='color:#00d4ff; font-size: 1.2em'>${price:,.2f}</strong><br>
+            <hr style='border-color: #333'>
+            <small>Total Value</small><br>
+            <strong style='color:#fff; font-size: 1.2em'>${total:,.2f}</strong>
         </div>
         """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # INTERACTIVE GLOBE (VISUAL ONLY)
-    st.markdown("### 🌍 Global Supply Network Active")
-    # Generating a dummy map to look impressive
-    map_data = pd.DataFrame({
-        'lat': [20.5937, 35.8617, -25.2744, 56.1304, 37.0902],
-        'lon': [78.9629, 104.1954, 133.7751, -106.3468, -95.7129],
-        'volume': [100, 80, 60, 40, 90]
-    })
-    st.map(map_data, zoom=1, use_container_width=True)
-
-    st.markdown("---")
-
-    # THE "BILLION DOLLAR" FORM
-    st.markdown("### 🤝 Initiate Trade Partnership")
-    st.write("Restricted Access. Institutional Partners Only.")
-    
-    with st.form("premium_rfq"):
-        c1, c2 = st.columns(2)
-        with c1:
-            company = st.text_input("Entity / Company Name")
-            industry = st.selectbox("Industry Vertical", ["EV Battery Mfg", "Aerospace & Defense", "Heavy Industries", "Pharmaceuticals", "Construction"])
-            region = st.selectbox("Delivery Region", ["APAC (Asia-Pacific)", "EMEA (Europe/Mid-East)", "Americas"])
-        with c2:
-            material = st.selectbox("Strategic Material Required", ["Lithium Carbonate (Battery Grade)", "Industrial Scrap Metal (Ferrous)", "Rare Earth Elements", "Polymers & Resins", "Bulk Agro Commodities"])
-            volume = st.number_input("Est. Quarterly Volume (Metric Tonnes)", min_value=100)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("REQUEST PROCUREMENT ACCESS >")
+        if st.button("🚀 EXECUTE BUY ORDER"):
+            with st.spinner("Connecting to Exchange..."):
+                time.sleep(1.5) # Fake loading for realism
+            st.success(f"ORDER FILLED: {qty} MT of {asset} @ ${price}")
+            st.balloons()
+            
+    with tab2:
+        st.info("Log in to access Seller Liquidity Pool.")
         
-        if submitted:
-            if company:
-                save_lead(company, industry, region, material, volume)
-                st.balloons()
-                st.success("TRANSMISSION RECEIVED. Our Trade Desk will initiate protocol shortly.")
-            else:
-                st.error("ENTITY NAME REQUIRED FOR PROTOCOL INITIATION.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 5. THE COMMAND CENTER (ADMIN VIEW) ---
-elif mode == "Command Center (Admin)":
-    pwd = st.sidebar.text_input("Enter Clearance Code", type="password")
-    
-    if pwd == ADMIN_PASSWORD:
-        st.title("🚀 STRATEGY COMMAND CENTER")
-        st.markdown("Real-time Intelligence on Supply Demand.")
-        
-        df = load_data()
-        
-        if not df.empty:
-            # KPIS ROW
-            k1, k2, k3, k4 = st.columns(4)
-            k1.metric("Active Leads", len(df), "+2 today")
-            k2.metric("Total Demand (MT)", f"{df['Volume_MT'].sum():,.0f}", "High Volume")
-            k3.metric("Top Region", df['Region'].mode()[0])
-            k4.metric("Est. Pipeline Value", "$4.2M", "+12%")
-            
-            st.markdown("---")
-            
-            # ADVANCED CHARTS
-            c1, c2 = st.columns(2)
-            
-            with c1:
-                st.markdown("#### Demand Segmentation (By Industry)")
-                fig_pie = px.pie(df, names='Industry', hole=0.6, color_discrete_sequence=px.colors.sequential.Cyan)
-                fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
-                st.plotly_chart(fig_pie, use_container_width=True)
-            
-            with c2:
-                st.markdown("#### Volume Requirements (Metric Tonnes)")
-                fig_bar = px.bar(df, x='Company', y='Volume_MT', color='Material', template="plotly_dark")
-                fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-                st.plotly_chart(fig_bar, use_container_width=True)
-            
-            # THE DATABASE
-            st.markdown("### 📂 Inbound Data Stream")
-            st.dataframe(df, use_container_width=True)
-        
-        else:
-            st.info("Awaiting Data Stream...")
-            
-    else:
-        st.warning("ACCESS DENIED. AUTHORIZED PERSONNEL ONLY.")
+# --- 7. TRUST & STATS BAR (The "Trustfull" Part) ---
+st.markdown("---")
+st.markdown("### 🛡️ INSTITUTIONAL GRADE SECURITY")
+
+stat1, stat2, stat3, stat4 = st.columns(4)
+
+def stat_card(label, value, sub):
+    st.markdown(f"""
+    <div class="glass-panel" style="text-align: center;">
+        <h2 style="margin:0; color:#00d4ff;">{value}</h2>
+        <p style="margin:0; font-weight:bold;">{label}</p>
+        <small style="color:#888;">{sub}</small>
+    </div>
+    """, unsafe_allow_html=True)
+
+with stat1: stat_card("Verified Suppliers", "500+", "Global Network")
+with stat2: stat_card("Trade Volume", "$120M", "Last 24 Hours")
+with stat3: stat_card("Escrow Secured", "100%", "Bank Grade Vault")
+with stat4: stat_card("Latency", "12ms", "High-Frequency Core")
